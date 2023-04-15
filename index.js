@@ -1,3 +1,11 @@
+const {Configuration, OpenAIApi} = require('openai');
+const config = new Configuration({
+    apiKey: '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',
+});
+
+
+const openai = new OpenAIApi(config);
+openai.api_key = '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';
 const { Client } = require('whatsapp-web.js');
 const qrcode = require("qrcode-terminal");
 const client = new Client();
@@ -62,6 +70,7 @@ client.on('message', msg => {
         const mainSort = Math.floor(Math.random() * agentes.length);
         msg.reply(`seu main no Valorant é: ${agentes[mainSort]} 🤭`);
     }
+    
     
     
 });
@@ -205,6 +214,24 @@ client.on('message', async (msg) => {
             console.log(`${nome} ${violencias[indiceviolencia]} ${text[indicepessoa]}`)
         }
         
+        
+    }
+    if (texto.substring(0, 4) === '!gpt') {
+        const chat = await msg.getChat();
+        console.log("leu !gpt")
+        const prompt = `
+        ${texto.substring(4, texto.length)}
+        `;
+
+        const response = await openai.createCompletion({
+            model: "text-davinci-003",
+            prompt: prompt,
+            max_tokens: 2048,
+            temperature: 1,
+        });
+
+        console.log(response.data.choices[0].text);
+        await chat.sendMessage(`GPT: ${response.data.choices[0].text}`);
         
     }
 });
