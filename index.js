@@ -1,11 +1,13 @@
+require('dotenv').config()
 const {Configuration, OpenAIApi} = require('openai');
 const config = new Configuration({
-    apiKey: '',
+    apiKey: process.env.CHAVEAPI,
 });
 
-
+const { MessageMedia } = require('whatsapp-web.js');
+const axios = require('axios');
 const openai = new OpenAIApi(config);
-openai.api_key = '';
+openai.api_key = config.apiKey;
 const { Client } = require('whatsapp-web.js');
 const qrcode = require("qrcode-terminal");
 const client = new Client();
@@ -216,7 +218,7 @@ client.on('message', async (msg) => {
         
         
     }
-    if (texto.substring(0, 4) === '!gpt') {
+    if (texto.substring(0, 4) === '!gpt' && texto.length > 4) {
         const chat = await msg.getChat();
         console.log("leu !gpt")
         const prompt = `
@@ -233,6 +235,59 @@ client.on('message', async (msg) => {
         console.log(response.data.choices[0].text);
         await chat.sendMessage(`GPT: ${response.data.choices[0].text}`);
         
+    }
+    if (texto.substring(0, 4) === '!gpt' && texto.length <= 4){
+        const chat = await msg.getChat();
+        await chat.sendMessage(`GPT: uma mensagem é necessária após !gpt`);
+    }
+    if (texto === '!gato'){
+        const chat = await msg.getChat();
+        const imageUrl = 'https://i.pinimg.com/280x280_RS/3f/b5/27/3fb527a657ea80ec279e7b399a112929.jpg';
+
+        // Faz o download da imagem usando o Axios
+        axios.get(imageUrl, { responseType: 'arraybuffer' })
+        .then(response => {
+            // Cria a mensagem de imagem a partir do buffer de dados resultante
+            const imagemBase64 = Buffer.from(response.data).toString('base64');
+            const imagemMsg = new MessageMedia('image/jpeg', imagemBase64);
+
+            // Envia a mensagem de imagem para um contato ou grupo usando o objeto Client
+            chat.sendMessage(imagemMsg, { caption: 'Gato Makonha' });
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    }
+    try {
+        if (texto.substring(0, 8) === '!imagine' && texto.length > 8){
+            const chat = await msg.getChat();
+            const prompt = texto.substring(9, texto.length);
+            const response = await openai.createImage({
+                prompt: prompt,
+                n: 1,
+                size: "1024x1024",
+              });
+            const imageUrl = response.data.data[0].url;
+    
+            // Faz o download da imagem usando o Axios
+            axios.get(imageUrl, { responseType: 'arraybuffer' })
+            .then(response => {
+                // Cria a mensagem de imagem a partir do buffer de dados resultante
+                const imagemBase64 = Buffer.from(response.data).toString('base64');
+                const imagemMsg = new MessageMedia('image/jpeg', imagemBase64);
+    
+                // Envia a mensagem de imagem para um contato ou grupo usando o objeto Client
+                chat.sendMessage(imagemMsg, { caption: texto.substring(9, texto.length) });
+            })
+        }
+    } catch (error) {
+        console.log(`Erro DALLE: ${texto}`);
+        msg.reply(`DALLE: não vou criar isso`);
+    }
+    
+    if (texto.substring(0, 8) === '!imagine' && texto.length <= 8){
+        const chat = await msg.getChat();
+        await chat.sendMessage(`DALL·E: uma mensagem é necessária após !imagine`);
     }
 });
  
